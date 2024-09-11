@@ -1,0 +1,138 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import tkinter as tk
+from tkinter import ttk, messagebox
+import random
+import time
+import winsound
+import threading
+
+# Ennätystiedot dictionary-muodossa (lyhennetty luettavuuden vuoksi)
+record_data = {
+    10.8: {"year": 1900, "runner": "Frank Jarvis"},
+    10.6: {"year": 1912, "runner": "Donald Lippincott"},
+    10.4: {"year": 1921, "runner": "Charlie Paddock"},
+    10.3: {"year": 1930, "runner": "Percy Williams"},
+    10.2: {"year": 1956, "runner": "Willie Williams"},
+    10.0: {"year": 1960, "runner": "Armin Hary"},
+    9.95: {"year": 1968, "runner": "Jim Hines"},
+    9.93: {"year": 1983, "runner": "Calvin Smith"},
+    9.79: {"year": 1988, "runner": "Ben Johnson"},
+    9.86: {"year": 1991, "runner": "Carl Lewis"},
+    9.85: {"year": 1994, "runner": "Leroy Burrell"},
+    9.84: {"year": 1996, "runner": "Donovan Bailey"},
+    9.77: {"year": 2005, "runner": "Asafa Powell"},
+    9.72: {"year": 2008, "runner": "Usain Bolt"},
+    9.58: {"year": 2009, "runner": "Usain Bolt"},
+    5.3: {"year": None, "runner": "Lion1"},
+    5.4: {"year": None, "runner": "Lion2"},
+    5.8: {"year": None, "runner": "Lion3"},
+    6.0: {"year": None, "runner": "Lion4"},
+    6.1: {"year": None, "runner": "Lion5"},
+    6.2: {"year": None, "runner": "Lion6"},
+    6.3: {"year": None, "runner": "Lion7"},
+    6.6: {"year": None, "runner": "Lion8"},
+    6.8: {"year": None, "runner": "Lion9"},
+    6.9: {"year": None, "runner": "Lion10"},
+}
+
+# List comprehension -tyylinen tapa hakea ajat ja vuodet
+record_times = [rec for rec in record_data if record_data[rec]["year"]]
+record_years = [record_data[rec]["year"] for rec in record_times]
+
+# Luodaan graafi
+plt.figure(figsize=(10, 6))
+plt.plot(record_years, record_times, marker='o', linestyle='-', color='b', label='Ennätysten kehittyminen')
+plt.xlabel('Vuosi')
+plt.ylabel('100m Ennätysaika (s)')
+plt.title('100m Ennätyksen Kehitys (1900-2050)')
+plt.gca().invert_yaxis()
+plt.legend()
+plt.show()
+
+# Luodaan tkinter-GUI
+window = tk.Tk()
+window.title('Ernestin ja Kernestin juoksu')
+
+# Luodaan kanvaasi juoksuradalle
+track = tk.Canvas(window, width=600, height=200)
+track.pack()
+
+# Piirretään lähtö- ja maaliviivat
+start_line = track.create_line(100, 50, 100, 150, fill="black", width=5)
+finish_line = track.create_line(500, 50, 500, 150, fill="red", width=5)
+
+# Piirretään Ernesti ja Kernesti neliöinä
+Ernesti = track.create_rectangle(80, 60, 100, 80, fill="blue")
+Kernesti = track.create_rectangle(80, 100, 100, 120, fill="green")
+
+Ernesti_time = Kernesti_time = 0
+
+# Simuloidaan Ernestin juoksu
+def simulate_Ernesti():
+    global Ernesti_time
+    track.coords(Ernesti, 80, 60, 100, 80)
+    r1_speed = random.uniform(0.3, 0.25)
+    start = time.time()
+    for _ in range(100, 500, 10):
+        track.move(Ernesti, 10, 0)
+        window.update()
+        time.sleep(r1_speed)
+    Ernesti_time = time.time() - start
+    print("Ernesti saapui maaliin!")
+    window.after(0, declare_winner)
+
+# Simuloidaan Kernestin juoksu
+def simulate_Kernesti():
+    global Kernesti_time
+    track.coords(Kernesti, 80, 100, 100, 120)
+    r2_speed = random.uniform(0.3, 0.25)
+    start = time.time()
+    for _ in range(100, 500, 10):
+        track.move(Kernesti, 10, 0)
+        window.update()
+        time.sleep(r2_speed)
+    Kernesti_time = time.time() - start
+    print("Kernesti saapui maaliin!")
+    window.after(0, declare_winner)
+
+# Tarkastetaan voittaja
+def declare_winner():
+    if Ernesti_time > 0 and Kernesti_time > 0:
+        if Ernesti_time < Kernesti_time:
+            result = f"Ernesti voitti ajalla {Ernesti_time:.2f} sekuntia!"
+        elif Kernesti_time < Ernesti_time:
+            result = f"Kernesti voitti ajalla {Kernesti_time:.2f} sekuntia!"
+        else:
+            result = "Tasapeli!"
+        messagebox.showinfo("Kisa Päättyi!", result)
+
+# Käynnistetään vain Ernestin kilpailu
+def start_Ernesti_race():
+    ernest_thread = threading.Thread(target=simulate_Ernesti)
+    ernest_thread.start()
+
+# Käynnistetään vain Kernestin kilpailu
+def start_Kernesti_race():
+    kernest_thread = threading.Thread(target=simulate_Kernesti)
+    kernest_thread.start()
+
+# Aloitetaan molempien kilpailu yhtä aikaa
+def start_race():
+    ernest_thread = threading.Thread(target=simulate_Ernesti)
+    kernest_thread = threading.Thread(target=simulate_Kernesti)
+    ernest_thread.start()
+    kernest_thread.start()
+
+# Napit
+ernesti_button = tk.Button(window, text="Aloita Ernestin Kisa", command=start_Ernesti_race)
+ernesti_button.pack()
+
+kernesti_button = tk.Button(window, text="Aloita Kernestin Kisa", command=start_Kernesti_race)
+kernesti_button.pack()
+
+both_button = tk.Button(window, text="Aloita Molemmat Kisat", command=start_race)
+both_button.pack()
+
+# Aloitetaan pääsilmukka
+window.mainloop()
