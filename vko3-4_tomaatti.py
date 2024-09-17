@@ -4,13 +4,15 @@ import random
 import math
 import winsound
 
-hit_count = {'tomatoes': 0}
+hit_count = {'ernest': 0, 'kernest': 0}
 
 def update_hit_count_label():
-    hit_count_label.config(text=f"Tomatoes Hit: {hit_count['tomatoes']}")
+    ernest_hit_count_label.config(text=f"Ernest Tomatoes Hit: {hit_count['ernest']}")
+    kernest_hit_count_label.config(text=f"Kernest Tomatoes Hit: {hit_count['kernest']}")
 
 def reset_hit_count():
-    hit_count['tomatoes'] = 0
+    hit_count['ernest'] = 0
+    hit_count['kernest'] = 0
     update_hit_count_label()
 
 def move_ernest():
@@ -23,35 +25,108 @@ def move_ernest():
     else:
         canvas.coords(ernest_image, x, y)
 
-def throw_tomato():
-    if ernest_image is None:
+def move_kernest():
+    global kernest_image
+    x = 50
+    y = random.randint(50, window_height - 150)
+    
+    if kernest_image is None:
+        kernest_image = canvas.create_image(x, y, image=kernest_image_file)
+    else:
+        canvas.coords(kernest_image, x, y)
+
+def throw_tomato(from_who):
+    if from_who == "ernest" and ernest_image is None:
         print("Ernest is not placed yet!")
         return
+    elif from_who == "kernest" and kernest_image is None:
+        print("Kernest is not placed yet!")
+        return
 
-    ernest_x, ernest_y = canvas.coords(ernest_image)
-    tomato = canvas.create_image(ernest_x, ernest_y, image=tomato_image_file)
-    target_coords = canvas.coords(target_image)
-    target_x, target_y = target_coords
-    dx = (target_x - ernest_x) / 50
-    dy = (target_y - ernest_y) / 50
+    if from_who == "ernest":
+        from_x, from_y = canvas.coords(ernest_image)
+        tomato = canvas.create_image(from_x, from_y, image=tomato_image_file)
+        target_coords = canvas.coords(target_image)
+        target_x, target_y = target_coords
+        dx = (target_x - from_x) / 50
+        dy = (target_y - from_y) / 50
+
+    elif from_who == "kernest":
+        from_x, from_y = canvas.coords(kernest_image)
+        tomato = canvas.create_image(from_x, from_y, image=tomato_image_file)
+        target_coords = canvas.coords(target_image)
+        target_x, target_y = target_coords
+        dx = (target_x - from_x) / 50
+        dy = (target_y - from_y) / 50
 
     def calculate_distance(x1, y1, x2, y2):
         return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
     def animate_tomato():
-        nonlocal ernest_x, ernest_y
-        distance_to_target = calculate_distance(ernest_x, ernest_y, target_x, target_y)
-        
+        nonlocal from_x, from_y
+        distance_to_target = calculate_distance(from_x, from_y, target_x, target_y)
         if distance_to_target > 10:
-            ernest_x += dx
-            ernest_y += dy
-            canvas.coords(tomato, ernest_x, ernest_y)
+            from_x += dx
+            from_y += dy
+            canvas.coords(tomato, from_x, from_y)
             canvas.after(20, animate_tomato)
         else:
-            print("Tomato has reached the center of the target!")
-            hit_count['tomatoes'] += 1
+            canvas.itemconfig(tomato, image=splat_image_file)
+            if from_who == "ernest":
+                hit_count['ernest'] += 1
+            else:
+                hit_count['kernest'] += 1
             update_hit_count_label()
             winsound.PlaySound('SystemAsterisk', winsound.SND_ALIAS)
+
+    animate_tomato()
+
+def throw_tomato_between_characters():
+    if hit_count['ernest'] >= hit_count['kernest'] + 2:
+        print("Ernest throws a tomato at Kernest!")
+        throw_between("ernest", "kernest")
+    elif hit_count['kernest'] >= hit_count['ernest'] + 2:
+        print("Kernest throws a tomato at Ernest!")
+        throw_between("kernest", "ernest")
+
+def throw_between(from_who, to_who):
+    if from_who == "ernest" and ernest_image is None:
+        print("Ernest is not placed yet!")
+        return
+    elif from_who == "kernest" and kernest_image is None:
+        print("Kernest is not placed yet!")
+        return
+
+    if from_who == "ernest":
+        from_x, from_y = canvas.coords(ernest_image)
+        target_coords = canvas.coords(kernest_image)
+    else:
+        from_x, from_y = canvas.coords(kernest_image)
+        target_coords = canvas.coords(ernest_image)
+
+    target_x, target_y = target_coords
+    dx = (target_x - from_x) / 50
+    dy = (target_y - from_y) / 50
+    tomato = canvas.create_image(from_x, from_y, image=tomato_image_file)
+
+    def calculate_distance(x1, y1, x2, y2):
+        return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+
+    def animate_tomato():
+        nonlocal from_x, from_y
+        distance_to_target = calculate_distance(from_x, from_y, target_x, target_y)
+        if distance_to_target > 10:
+            from_x += dx
+            from_y += dy
+            canvas.coords(tomato, from_x, from_y)
+            canvas.after(20, animate_tomato)
+        else:
+            canvas.itemconfig(tomato, image=splat_image_file)
+        if from_who == "ernest":
+            hit_count['ernest'] += 1
+        else:
+            winsound.PlaySound('SystemAsterisk', winsound.SND_ALIAS)
+            print(f"{from_who} hit {to_who}!")
 
     animate_tomato()
 
@@ -67,6 +142,8 @@ kernest_image_file = PhotoImage(file="asdt_tehtavat/kerne.png")
 ernest_image_file = PhotoImage(file="asdt_tehtavat/erne.png")
 target_image_file = PhotoImage(file="asdt_tehtavat/maalitaulu.png")
 tomato_image_file = PhotoImage(file="asdt_tehtavat/tomaatti.png")
+splat_image_file = PhotoImage(file="asdt_tehtavat/splat.png")
+
 
 kernest_x = 50
 kernest_y = random.randint(50, window_height - 150)
@@ -78,16 +155,34 @@ target_image = canvas.create_image(target_x, target_y, image=target_image_file)
 
 ernest_image = None
 
-hit_count_label = tk.Label(window, text=f"Tomatoes Hit: {hit_count['tomatoes']}", font=('Arial', 14))
-hit_count_label.pack(side=tk.TOP)
+top_frame = tk.Frame(window)
+top_frame.pack(side=tk.TOP, fill=tk.X)
 
-move_button = tk.Button(window, text="Move Ernest", command=move_ernest)
-move_button.pack(side=tk.LEFT)
+kernest_hit_count_label = tk.Label(top_frame, text=f"Kernestin osumat: {hit_count['kernest']}", font=('Arial', 14))
+kernest_hit_count_label.pack(side=tk.LEFT, padx=10)
 
-throw_button = tk.Button(window, text="Throw Tomato", command=throw_tomato)
-throw_button.pack(side=tk.RIGHT)
+ernest_hit_count_label = tk.Label(top_frame, text=f"Ernestin osumat: {hit_count['ernest']}", font=('Arial', 14))
+ernest_hit_count_label.pack(side=tk.RIGHT, padx=10)
 
-reset_button = tk.Button(window, text="Reset Counter", command=reset_hit_count)
-reset_button.pack(side=tk.TOP)
+control_frame = tk.Frame(window)
+control_frame.pack(side=tk.BOTTOM, fill=tk.X)
+
+move_kernest_button = tk.Button(control_frame, text="Liikuta Kernestiä", command=move_kernest)
+move_kernest_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+move_ernest_button = tk.Button(control_frame, text="Lisää ja liikuta Ernestiä", command=move_ernest)
+move_ernest_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+throw_kernest_button = tk.Button(control_frame, text="Kernestin heitto", command=lambda: throw_tomato('kernest'))
+throw_kernest_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+reset_button = tk.Button(control_frame, text="Reset", command=reset_hit_count)
+reset_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+throw_between_button = tk.Button(control_frame, text="Rangaistuslaukaus", command=throw_tomato_between_characters)
+throw_between_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+throw_button = tk.Button(control_frame, text="Ernestin heitto", command=lambda: throw_tomato('ernest'))
+throw_button.pack(side=tk.RIGHT, padx=5, pady=5)
 
 window.mainloop()
