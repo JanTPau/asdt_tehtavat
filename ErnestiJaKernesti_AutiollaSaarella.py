@@ -1,59 +1,65 @@
 import tkinter as tk
-import time
 import numpy as np
 import winsound
 import threading
+import random
 
 ikkuna=tk.Tk()
-
 ikkuna.geometry("1000x550+100+200")
 
+#Sanakirjan alustus
 tiedot={}
 tiedot['apinamaara']=0
 tiedot['apina']={}
 tiedot['aika_askel']=100
 
+#Määrittää saaren ja mantereen rajat jotta apinat lähtee oikeasta kohtaa
 saaren_reuna_x = 200
 mantereen_reuna_x = 800
 
+#Saaren ja mantereen väli
 kokonaismatka_px = mantereen_reuna_x - saaren_reuna_x
 askeleen_pituus_px = kokonaismatka_px / 100
 
+#Hätä viesti jota apinat yrittää kuljettaa
+hataviesti = "Ernesti ja Kernesti tässä terve! Olemme autiolla saarella, voisiko joku tulla sieltä sivistyneestä maailmasta hakemaan meidät pois! Kiitos!"
+hataviesti_sanat = hataviesti.split()
 
-def luo_ja_laheta_apina(start_y):
+#Toiminto joka luo ja lähettää apinan matkaan
+def luo_ja_laheta_apina(start_y, sana):
     global tiedot
-    print("Luodaaan apina...")
+    print(f"Luodaaan apina: '{sana}'")
     tiedot['apinamaara']+=1
     apina_id=tiedot['apinamaara']
 
+    #Tässä apinan tiedot tallennetaan sanakirjaan
     tiedot['apina'][apina_id] = {
-        'nimi': 'Ernestin apina',
         'x': saaren_reuna_x,
         'y': start_y ,
-        'lempiväri': 'oranssi',
-        'yksilöllinen_nimi': ''.join(['E', str(apina_id)])
+        'yksilöllinen_nimi': sana,
+        'labeli': None      #Apinan label joka korvataan hätäviestin sanalla
     }
 
-
-    # mitä kaikkea sanakirjaan voidaankaan laittaa...
-    apinakahva=tk.Label(text=tiedot['apina'][apina_id]['yksilöllinen_nimi'])
+    #Apinakahva on label jolla uivaa apinaa havainnollistetaan
+    apinakahva=tk.Label(ikkuna, text=sana)
     apinakahva.place(x=tiedot['apina'][apina_id]['x'],y=tiedot['apina'][apina_id]['y'])
 
     tiedot['apina'][apina_id]['labeli']=apinakahva
 
     print(tiedot)
 
-    #time.sleep(0.5)
+    #Piippaus kun apina lähtee liikkeelle
     threading.Thread(target=lambda: winsound.Beep(1000, 200)).start()
-    #time.sleep(0.5)
 
-    print("Lähetetään se uimaan")
+    #Uinti-toiminto liikuttaa apinaa ja piipittää samalla. Kun km_maara ylittää sadan
+    #apina lopettaa uimisen if-elsellä ja piippaa merkiksi
+    print(f"Lähetetään apina sanan '{sana}' kanssa uimaan")
     def uinti(km_maara=0):
         if km_maara < 100:
             tiedot['apina'][apina_id]['x'] += askeleen_pituus_px
             tiedot['apina'][apina_id]['y'] += np.random.randint(-10, 10)
 
-            if np.random.random() > 0.9:
+            if np.random.random() > 0.99:
                 tiedot['apina'][apina_id]['labeli'].configure(fg='red')
 
             tiedot['apina'][apina_id]['labeli'].place(x=tiedot['apina'][apina_id]['x'], y=tiedot['apina'][apina_id]['y'])
@@ -62,42 +68,32 @@ def luo_ja_laheta_apina(start_y):
 
             ikkuna.after(tiedot['aika_askel'], uinti, km_maara + 1)
         else:
-            print("Apina selvisi rantaan!")
+            print(f"Apina selvisi rantaan sanan '{sana}' kanssa!")
             winsound.Beep(1000, 200)
 
     ikkuna.after(0, uinti)
 
+
+
+#Valitsee random sanan hätäviestistä
+def laheta_random_sana(start_y):
+    sana = random.choice(hataviesti_sanat)
+    threading.Thread(target=luo_ja_laheta_apina, args=(start_y, sana)).start()
+
+def laheta_kymmenen_apinaa(start_y):
+    for _ in range(10):
+        laheta_random_sana(start_y)
+
+#Nämä asettaa apinan lähtökohdaksi joko saaren pohjois- tai eteläpuolen sekä antaa apinalle sanan
 def ernestin_luo_ja_laheta_apina():
-    luo_ja_laheta_apina(100)
+    start_y = 100
+    laheta_random_sana(start_y)
 
 def kernestin_luo_ja_laheta_apina():
-    luo_ja_laheta_apina(400)
+    start_y = 400
+    laheta_random_sana(start_y)
 
-def luo_ja_laheta_apina_saikeistin_ylhaalta():
-    kahva = threading.Thread(target=ernestin_luo_ja_laheta_apina)
-    kahva.start()
-
-def luo_ja_laheta_apina_saikeistin_alhaalta():
-    kahva = threading.Thread(target=kernestin_luo_ja_laheta_apina)
-    kahva.start()
-
-#def tarkkaile():
-    #global tiedot
-    #for i in range(100):
-        #for api in range(tiedot['apinamaara']):
-            #y_koordinaatti_juuri_talla_apinalla=tiedot['apina'][api]['y']
-            #print("Tarkasteltava apina on korkeudella",y_koordinaatti_juuri_talla_apinalla)
-
-        #if tiedot['apinamaara']>20:
-            #winsound.Beep(4000,1000)
-            #print("Meressä on ahdasta!")
-        #winsound.Beep(262,200)
-        #time.sleep(1)
-
-#def tarkkaile_saikeistin():
-    #kahva=threading.Thread(target=tarkkaile)
-    #kahva.start()
-
+#Alla vielä napit sekä saarta ja mannerta hahmottavat palkit
 
 ernestin_painike = tk.Button(text="Ernesti, lähetä apina", command=ernestin_luo_ja_laheta_apina)
 ernestin_painike.place(x=350, y=500)
@@ -105,16 +101,16 @@ ernestin_painike.place(x=350, y=500)
 kernestin_painike = tk.Button(text="Kernesti, lähetä apina", command=kernestin_luo_ja_laheta_apina)
 kernestin_painike.place(x=200, y=500)
 
-#tarkkailija_painike=tk.Button(text="Tarkkaile Ernestin apinoita",command=tarkkaile_saikeistin)
-#tarkkailija_painike.place(x=500,y=500)
+ernestin_kymmenen_painike = tk.Button(text="Ernesti, lähetä 10 apinaa", command=lambda: laheta_kymmenen_apinaa(100))
+ernestin_kymmenen_painike.place(x=350, y=540)
+
+kernestin_kymmenen_painike = tk.Button(text="Kernesti, lähetä 10 apinaa", command=lambda: laheta_kymmenen_apinaa(400))
+kernestin_kymmenen_painike.place(x=200, y=540)
 
 saari = tk.Frame(ikkuna, width=100, bg="lightgreen")
 saari.place(x=0, y=0, width=200, relheight=1.0)
 
 shore_frame = tk.Frame(ikkuna, width=100, bg="burlywood")
 shore_frame.place(x=800, y=0, width=200, relheight=1.0)
-
-#niksi
-#ikkuna.after(1000,ikkuna.destroy)
 
 ikkuna.mainloop()
