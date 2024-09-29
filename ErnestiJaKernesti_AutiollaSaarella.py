@@ -22,6 +22,7 @@ kokonaismatka_px = mantereen_reuna_x - saaren_reuna_x
 askeleen_pituus_px = kokonaismatka_px / 100
 
 #Hätä viesti jota apinat yrittää kuljettaa
+#Viestin 'splittaaminen' ja (alempana) random sanan asettaminen apinalle on tekoälyn antamasta koodista muokattua
 hataviesti = "Ernesti ja Kernesti tässä terve! Olemme autiolla saarella, voisiko joku tulla sieltä sivistyneestä maailmasta hakemaan meidät pois! Kiitos!"
 hataviesti_sanat = hataviesti.split()
 
@@ -53,6 +54,7 @@ def luo_ja_laheta_apina(start_y, sana):
 
     #Uinti-toiminto liikuttaa apinaa ja piipittää samalla. Kun km_maara ylittää sadan
     #apina lopettaa uimisen if-elsellä ja piippaa merkiksi
+    #Funktion karkea rakenne on tekoälyltä, muokattu ohjelmaan sopivaksi
     print(f"Lähetetään apina sanan '{sana}' kanssa uimaan")
     def uinti(km_maara=0):
         if km_maara < 100:
